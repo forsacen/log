@@ -57,9 +57,6 @@ loger.prototype.setStackDeep=function(stackDeep){
  * sql日志
  * @param db
  */
-function newSqlLoger(db){
-    return newSqlLoger(db)
-}
 
 let sqlLoger=function(db){
     this.db=db
@@ -79,9 +76,6 @@ sqlLoger.prototype.debug=function(arg,cb){
  * @param db
  */
 
-function newMongoLoger(db){
-    return new mongoLoger(db)
-}
 
 let mongoLoger=function(db){
     this.db=db
@@ -126,9 +120,6 @@ mongoLoger.prototype._save=function(arg,flag,cb){
  * 本地日志,非线程安全
  * @param db
  */
-function newLocalLoger(file){
-    return new localLoger(file)
-}
 
 let localLoger=function(file){
     this.file=file
@@ -187,9 +178,6 @@ localLoger.prototype._write=function(data,cb){
  *
  *用法loger=newSmartLoger({db:xxx,file:project.log});loger.warn(e,function(rate,data){})
  */
-function newSmartLoger(option){
-    return new smartLoger(option)
-}
 let smartLoger=function(option){
     this.dbLoger=null
     this.localLoger=null
@@ -364,8 +352,8 @@ util.inherits(mongoLoger,loger)
 util.inherits(localLoger,loger)
 util.inherits(smartLoger,loger)
 module.exports={
-    newSqlLoger:newSqlLoger,
-    newMongoLoger:newMongoLoger,
-    newLocalLoger:newLocalLoger,
-    newSmartLoger:newSmartLoger,
+    mongoLoger:mongoLoger,
+    sqlLoger:sqlLoger,
+    localLoger:localLoger,
+    smartLoger:smartLoger,
 }
