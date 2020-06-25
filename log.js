@@ -322,7 +322,7 @@ smartLoger.prototype._warn=function(arg,cb){
                             }
                         }else{
                             if(cb&&typeof cb=='function') {
-                                cb(null)
+                                cb(null,data)
                             }
                         }
                     })
@@ -333,7 +333,7 @@ smartLoger.prototype._warn=function(arg,cb){
                 }
             }else{
                 if(cb&&typeof cb=='function'){
-                    cb(null)
+                    cb(null,data)
                 }
             }
         })
@@ -346,7 +346,7 @@ smartLoger.prototype._warn=function(arg,cb){
                 }
             }else{
                 if(cb&&typeof cb=='function'){
-                    cb(null)
+                    cb(null,data)
                 }
             }
         })
@@ -375,7 +375,7 @@ smartLoger.prototype._fatal=function(arg,cb){
                             }
                         }else{
                             if(cb&&typeof cb=='function') {
-                                cb(null)
+                                cb(null,data)
                             }
                         }
                     })
@@ -386,7 +386,7 @@ smartLoger.prototype._fatal=function(arg,cb){
                 }
             }else{
                 if(cb&&typeof cb=='function') {
-                    cb(null)
+                    cb(null,data)
                 }
             }
         })
@@ -399,7 +399,7 @@ smartLoger.prototype._fatal=function(arg,cb){
                 }
             }else{
                 if(cb&&typeof cb=='function'){
-                    cb(null)
+                    cb(null,data)
                 }
             }
         })
@@ -428,7 +428,7 @@ smartLoger.prototype._log=function(arg,cb){
                             }
                         }else{
                             if(cb&&typeof cb=='function') {
-                                cb(null)
+                                cb(null,data)
                             }
                         }
                     })
@@ -439,7 +439,7 @@ smartLoger.prototype._log=function(arg,cb){
                 }
             }else{
                 if(cb&&typeof cb=='function') {
-                    cb(null)
+                    cb(null,data)
                 }
             }
         })
@@ -452,7 +452,7 @@ smartLoger.prototype._log=function(arg,cb){
                 }
             }else{
                 if(cb&&typeof cb=='function'){
-                    cb(null)
+                    cb(null,data)
                 }
             }
         })
