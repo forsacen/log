@@ -45,13 +45,15 @@ function _getIp() {
  * @param db
  */
 let loger=function(){
-    this.stackDeep=3
+    this.sd=4
+    this.stackDeep=this.sd
 }
-loger.prototype.print=function(arg){
-    console.log(arg)
-}
+
 loger.prototype.setStackDeep=function(stackDeep){
     this.stackDeep=stackDeep
+}
+loger.prototype.setSD=function(sd){
+    this.sd=sd
 }
 /****************************
  * sql日志
@@ -67,7 +69,7 @@ sqlLoger.prototype.warn=function(arg,cb){
 sqlLoger.prototype.fatal=function(arg,cb){
 
 }
-sqlLoger.prototype.debug=function(arg,cb){
+sqlLoger.prototype.log=function(arg,cb){
 
 }
 
@@ -77,26 +79,83 @@ sqlLoger.prototype.debug=function(arg,cb){
  */
 
 
-let mongoLoger=function(db){
+let mongoLoger=function(db,col){
     this.db=db
-    this.stackDeep=3
+    this.col=col
+    this.sd=4
+    this.stackDeep=this.sd
 }
 
-mongoLoger.prototype.warn=function(arg,cb){
+mongoLoger.prototype._warn=function(arg,cb){
     this._save(arg,'warning',cb)
 }
 
-mongoLoger.prototype.fatal=function(arg,cb){
+mongoLoger.prototype._fatal=function(arg,cb){
     this._save(arg,'fatal',cb)
 }
 
-mongoLoger.prototype.debug=function(arg,cb){
-    this._save(arg,'debug',cb)
+mongoLoger.prototype._log=function(arg,cb){
+    this._save(arg,'log',cb)
+}
+
+mongoLoger.prototype.warn=function(arg,cb){
+    if(cb&&typeof cb=='function'){
+        this.setStackDeep(this.sd)
+        return this._warn(arg,cb)
+    }else{
+        this.setStackDeep(this.sd+2)
+        return new Promise((resolve, reject)=> {
+            this._warn(arg,function (err,data) {
+                if(err){
+                    reject(err)
+                }else{
+                    resolve(data)
+                }
+            })
+        })
+    }
+}
+
+mongoLoger.prototype.fatal=function(arg,cb){
+    if(cb&&typeof cb=='function'){
+        this.setStackDeep(this.sd)
+        return this._fatal(arg,cb)
+    }else{
+        this.setStackDeep(this.sd+2)
+        return new Promise((resolve, reject)=> {
+            this._fatal(arg,function (err,data) {
+                if(err){
+                    reject(err)
+                }else{
+                    resolve(data)
+                }
+            })
+        })
+    }
+}
+
+mongoLoger.prototype.log=function(arg,cb){
+    if(cb&&typeof cb=='function'){
+        this.setStackDeep(this.sd)
+        return this._log(arg,cb)
+    }else{
+        this.setStackDeep(this.sd+2)
+        return new Promise((resolve, reject)=> {
+            this._log(arg,function (err,data) {
+                if(err){
+                    reject(err)
+                }else{
+                    resolve(data)
+                }
+            })
+        })
+    }
 }
 
 mongoLoger.prototype._save=function(arg,flag,cb){
     let stack=_getStackArray()
     let projectname=_getProjectName()
+    let col=this.col?this.col:projectname
     let data={
         host:os.hostname(),
         ip:_getIp(),
@@ -109,7 +168,7 @@ mongoLoger.prototype._save=function(arg,flag,cb){
         entry:_getEntryFile(),
         stack:arg instanceof Error?arg.stack:null,
     }
-    this.db.collection(projectname).insertOne(data,function(err){
+    this.db.collection(col).insertOne(data,function(err){
         if(cb&&typeof cb=='function'){
             cb(err,data)
         }
@@ -123,23 +182,74 @@ mongoLoger.prototype._save=function(arg,flag,cb){
 
 let localLoger=function(file){
     this.file=file
-    this.stackDeep=3
+    this.sd=4
+    this.stackDeep=this.sd
 }
 
-localLoger.prototype.warn=function(arg,cb){
+localLoger.prototype._warn=function(arg,cb){
     this._save(arg,'warning',cb)
 }
 
-localLoger.prototype.fatal=function (arg,cb) {
+localLoger.prototype._fatal=function (arg,cb) {
     this._save(arg,'fatal',cb)
 }
 
-localLoger.prototype.debug=function (arg,cb) {
-    this._save(arg,'debug',cb)
+localLoger.prototype._log=function (arg,cb) {
+    this._save(arg,'log',cb)
 }
 
-localLoger.prototype.print=function(arg){
-    console.log(arg instanceof Error?arg.stack:arg)
+localLoger.prototype.warn=function(arg,cb){
+    if(cb&&typeof cb=='function'){
+        this.setStackDeep(this.sd)
+        return this._warn(arg,cb)
+    }else{
+        this.setStackDeep(this.sd+2)
+        return new Promise((resolve, reject)=> {
+            this._warn(arg,function (err,data) {
+                if(err){
+                    reject(err)
+                }else{
+                    resolve(data)
+                }
+            })
+        })
+    }
+}
+
+localLoger.prototype.fatal=function(arg,cb){
+    if(cb&&typeof cb=='function'){
+        this.setStackDeep(this.sd)
+        return this._fatal(arg,cb)
+    }else{
+        this.setStackDeep(this.sd+2)
+        return new Promise((resolve, reject)=> {
+            this._fatal(arg,function (err,data) {
+                if(err){
+                    reject(err)
+                }else{
+                    resolve(data)
+                }
+            })
+        })
+    }
+}
+
+localLoger.prototype.log=function(arg,cb){
+    if(cb&&typeof cb=='function'){
+        this.setStackDeep(this.sd)
+        return this._log(arg,cb)
+    }else{
+        this.setStackDeep(this.sd+2)
+        return new Promise((resolve, reject)=> {
+            this._log(arg,function (err,data) {
+                if(err){
+                    reject(err)
+                }else{
+                    resolve(data)
+                }
+            })
+        })
+    }
 }
 
 localLoger.prototype._save=function(arg,flag,cb){
@@ -182,16 +292,20 @@ let smartLoger=function(option){
     this.dbLoger=null
     this.localLoger=null
     if(option.db){
-        this.dbLoger=newMongoLoger(option.db)
-        this.dbLoger.setStackDeep(4)
+        if(option.col){
+            this.dbLoger=new mongoLoger(option.db,option.col)
+        }else{
+            this.dbLoger=new mongoLoger(option.db)
+        }
+        this.dbStackDeep=6
     }
     if(option.file){
-        this.localLoger=newLocalLoger(option.file)
-        this.localLoger.setStackDeep(4)
+        this.localLoger=new localLoger(option.file)
+        this.localStackDeep=6
     }
 }
 
-smartLoger.prototype.warn=function(arg,cb){
+smartLoger.prototype._warn=function(arg,cb){
     let eRate=0
     let dbLoger=this.dbLoger
     let localLoger=this.localLoger
@@ -199,17 +313,17 @@ smartLoger.prototype.warn=function(arg,cb){
         dbLoger.warn(arg,function(err,data){
             if(err){
                 eRate=eRate+1
-                dbLoger.print(err)
                 if(localLoger){
                     localLoger._write(data,function(e,data){
                         if(e){
                             eRate+=2
-                            localLoger.print(e)
                             if(cb&&typeof cb=='function'){
                                 cb(new Error('smartLog write failed,loger type:all,error rate:3'),data)
                             }
                         }else{
-                            cb(null)
+                            if(cb&&typeof cb=='function') {
+                                cb(null)
+                            }
                         }
                     })
                 }else{
@@ -218,14 +332,15 @@ smartLoger.prototype.warn=function(arg,cb){
                     }
                 }
             }else{
-                cb(null)
+                if(cb&&typeof cb=='function'){
+                    cb(null)
+                }
             }
         })
     }else if(localLoger){
         localLoger.warn(arg,function(e,data){
             if(e){
                 eRate+=2
-                localLoger.print(e)
                 if(cb&&typeof cb=='function'){
                     cb(new Error('smartLog write failed,loger type:local,error rate:2'),data)
                 }
@@ -243,7 +358,7 @@ smartLoger.prototype.warn=function(arg,cb){
     }
 }
 
-smartLoger.prototype.fatal=function(arg,cb){
+smartLoger.prototype._fatal=function(arg,cb){
     let eRate=0
     let dbLoger=this.dbLoger
     let localLoger=this.localLoger
@@ -251,17 +366,17 @@ smartLoger.prototype.fatal=function(arg,cb){
         dbLoger.fatal(arg,function(err,data){
             if(err){
                 eRate=eRate+1
-                dbLoger.print(err)
                 if(localLoger){
                     localLoger._write(data,function(e,data){
                         if(e){
                             eRate+=2
-                            localLoger.print(e)
                             if(cb&&typeof cb=='function'){
                                 cb(new Error('smartLog write failed,loger type:all,error rate:3'),data)
                             }
                         }else{
-                            cb(null)
+                            if(cb&&typeof cb=='function') {
+                                cb(null)
+                            }
                         }
                     })
                 }else{
@@ -270,14 +385,15 @@ smartLoger.prototype.fatal=function(arg,cb){
                     }
                 }
             }else{
-                cb(null)
+                if(cb&&typeof cb=='function') {
+                    cb(null)
+                }
             }
         })
     }else if(localLoger){
         localLoger.fatal(arg,function(e,data){
             if(e){
                 eRate+=2
-                localLoger.print(e)
                 if(cb&&typeof cb=='function'){
                     cb(new Error('smartLog write failed,loger type:local,error rate:2'),data)
                 }
@@ -295,25 +411,25 @@ smartLoger.prototype.fatal=function(arg,cb){
     }
 }
 
-smartLoger.prototype.debug=function(arg,cb){
+smartLoger.prototype._log=function(arg,cb){
     let eRate=0
     let dbLoger=this.dbLoger
     let localLoger=this.localLoger
     if(dbLoger){
-        dbLoger.debug(arg,function(err,data){
+        dbLoger.log(arg,function(err,data){
             if(err){
                 eRate=eRate+1
-                dbLoger.print(err)
                 if(localLoger){
                     localLoger._write(data,function(e,data){
                         if(e){
                             eRate+=2
-                            localLoger.print(e)
                             if(cb&&typeof cb=='function'){
                                 cb(new Error('smartLog write failed,loger type:all,error rate:3'),data)
                             }
                         }else{
-                            cb(null)
+                            if(cb&&typeof cb=='function') {
+                                cb(null)
+                            }
                         }
                     })
                 }else{
@@ -322,14 +438,15 @@ smartLoger.prototype.debug=function(arg,cb){
                     }
                 }
             }else{
-                cb(null)
+                if(cb&&typeof cb=='function') {
+                    cb(null)
+                }
             }
         })
     }else if(localLoger){
-        localLoger.debug(arg,function(e,data){
+        localLoger.log(arg,function(e,data){
             if(e){
                 eRate+=2
-                localLoger.print(e)
                 if(cb&&typeof cb=='function'){
                     cb(new Error('smartLog write failed,loger type:local,error rate:2'),data)
                 }
@@ -344,6 +461,90 @@ smartLoger.prototype.debug=function(arg,cb){
         if(cb&&typeof cb=='function'){
             cb(new Error('smartLog write failed,both dbLoger and localLorger are null'))
         }
+    }
+}
+
+smartLoger.prototype.warn=function(arg,cb){
+    if(cb&&typeof cb=='function'){
+        if(this.localLoger){
+            this.localLoger.setSD(this.localStackDeep)
+        }
+        if(this.dbLoger){
+            this.dbLoger.setSD(this.dbStackDeep)
+        }
+        return this._warn(arg,cb)
+    }else{
+        if(this.localLoger){
+            this.localLoger.setSD(this.localStackDeep+2)
+        }
+        if(this.dbLoger){
+            this.dbLoger.setSD(this.dbStackDeep+2)
+        }
+        return new Promise((resolve, reject)=> {
+            this._warn(arg,function (err,data) {
+                if(err){
+                    reject(err)
+                }else{
+                    resolve(data)
+                }
+            })
+        })
+    }
+}
+
+smartLoger.prototype.fatal=function(arg,cb){
+    if(cb&&typeof cb=='function'){
+        if(this.localLoger){
+            this.localLoger.setSD(this.localStackDeep)
+        }
+        if(this.dbLoger){
+            this.dbLoger.setSD(this.dbStackDeep)
+        }
+        return this._fatal(arg,cb)
+    }else{
+        if(this.localLoger){
+            this.localLoger.setSD(this.localStackDeep+2)
+        }
+        if(this.dbLoger){
+            this.dbLoger.setSD(this.dbStackDeep+2)
+        }
+        return new Promise((resolve, reject)=> {
+            this._fatal(arg,function (err,data) {
+                if(err){
+                    reject(err)
+                }else{
+                    resolve(data)
+                }
+            })
+        })
+    }
+}
+
+smartLoger.prototype.log=function(arg,cb){
+    if(cb&&typeof cb=='function'){
+        if(this.localLoger){
+            this.localLoger.setSD(this.localStackDeep)
+        }
+        if(this.dbLoger){
+            this.dbLoger.setSD(this.dbStackDeep)
+        }
+        return this._log(arg,cb)
+    }else{
+        if(this.localLoger){
+            this.localLoger.setSD(this.localStackDeep+2)
+        }
+        if(this.dbLoger){
+            this.dbLoger.setSD(this.dbStackDeep+2)
+        }
+        return new Promise((resolve, reject)=> {
+            this._log(arg,function (err,data) {
+                if(err){
+                    reject(err)
+                }else{
+                    resolve(data)
+                }
+            })
+        })
     }
 }
 /*****************************/
