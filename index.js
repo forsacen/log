@@ -160,7 +160,7 @@ mongoLoger.prototype._save=function(arg,flag,cb){
         host:os.hostname(),
         ip:_getIp(),
         project:projectname,
-        time:new Date().toLocaleDateString(),
+        time:new Date().toISOString(),
         label:flag,
         msg:arg instanceof Error?arg.message:arg,
         file:stack[this.stackDeep].getFileName(),
@@ -256,7 +256,7 @@ localLoger.prototype._save=function(arg,flag,cb){
     let stack=_getStackArray()
     let data={
         label:flag,
-        time:new Date().toLocaleDateString(),
+        time:new Date().toISOString(),
         msg:arg instanceof Error?arg.message:arg,
         file:stack[this.stackDeep].getFileName(),
         line:stack[this.stackDeep].getLineNumber(),
