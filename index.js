@@ -284,6 +284,7 @@ localLoger.prototype._write=function(data,cb){
  *
  * @param {object} option 参数
  * @param {object} [option.db=null] mongodb数据库
+ * @param {object} [option.col=null] mongodb集合名
  * @param {object} [option.file=null] 本地日志文件名
  *
  *用法loger=newSmartLoger({db:xxx,file:project.log});loger.warn(e,function(rate,data){})
